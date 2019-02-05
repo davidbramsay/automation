@@ -1,5 +1,3 @@
-# call with sudo in order to broadcast on port 80
-
 from flask import Flask
 from flask_restful import Api, Resource, reqparse
 
@@ -31,4 +29,4 @@ api.add_resource(Videos, '/videos')
 api.add_resource(Play, '/play/<string:video>')
 
 if __name__=='__main__':
-	app.run(debug=True, host='0.0.0.0', port=80)
+	app.run(debug=True, host='0.0.0.0', port=5000)
