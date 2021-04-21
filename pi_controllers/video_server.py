@@ -4,18 +4,18 @@ import glob
 import vlc
 
 video_folder = '/videos/youtube_scenes/'
-video_type = 'm4v'
+video_type = 'webm'
 
 
 vlc_inst = vlc.Instance(
-		'--aout=alsa', 
-		'--alsa-samplerate=44100', 
-		'--input-repeat=999999', 
+		'--aout=alsa',
+		'--alsa-samplerate=44100',
+		'--input-repeat=999999',
 		'--loop',
 		'--repeat',
-		'--no-video-title-show', 
-		'--video-on-top', 
-		'--fullscreen', 
+		'--no-video-title-show',
+		'--video-on-top',
+		'--fullscreen',
 		'--mouse-hide-timeout=0')
 
 videos = glob.glob(video_folder + '*.' + video_type)

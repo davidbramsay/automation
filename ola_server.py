@@ -19,11 +19,11 @@ class LightHandler(object):
 
 	if type(dim) is bool and dim: dim = 10
 	if type(dim) is bool and not dim: dim = 255
-	if type(color) is string: 
+	if type(color) is string:
 		try:
 			color = self.colors[color]
 		except:
-			return 'not a valid color, ignoring', 404		
+			return 'not a valid color, ignoring', 404
 
 	assert (type(color) is tuple), 'color must be (r,g,b) tuple'
 	assert (type(dim) is int), 'dim must be an int'
@@ -46,13 +46,13 @@ class LightHandler(object):
 	else:
 		self.dmx.update_channel(dmxch, [0])
 
-	
+
     def all_lights_power(self, on=True):
 	if on:
                 self.dmx.update_channel(dmxch, [255])
 	else:
                 self.dmx.update_channel(values=[0])
-   
+
 
     def fade_all_lights(self, fadein=True):
         if fadein:
@@ -192,13 +192,13 @@ api.add_resource(LightsOff, '/lightoff')
 api.add_resource(LightOn, '/lighton/<int:dmxch>')
 api.add_resource(LightOff, '/lightoff/<int:dmxch>')
 
-api.add_resource(OutletOn, 'outlet/<int:outletnum>/on')
-api.add_resource(OutletOff, 'outlet/<int:outletnum>/off')
-api.add_resource(OutletToggle, 'outlet/<int:outletnum>/toggle')
+api.add_resource(OutletOn, '/outlet/<int:outletnum>/on')
+api.add_resource(OutletOff, '/outlet/<int:outletnum>/off')
+api.add_resource(OutletToggle, '/outlet/<int:outletnum>/toggle')
 
-api.add_resource(OutletsOn, 'outlets/on')
-api.add_resource(OutletsOff, 'outlets/off')
-api.add_resource(OutletsToggle, 'outlets/toggle')
+api.add_resource(OutletsOn, '/outlets/on')
+api.add_resource(OutletsOff, '/outlets/off')
+api.add_resource(OutletsToggle, '/outlets/toggle')
 
 if __name__=='__main__':
 	app.run(debug=True, host='0.0.0.0', port=5000)

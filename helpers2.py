@@ -17,6 +17,8 @@ class OutletNetworkController:
 
     def __init__(self, addresses="192.168.1.*"):
 
+        print 'searching ' + addresses
+        print 'should find/add devices now (indicated by [FOUND])...'
         # find all MAC address -> IP mappings
         self.addresses = addresses
         ans, unans = arping(addresses)
@@ -38,9 +40,9 @@ class OutletNetworkController:
                 self.outlet_configs.append((oc[0], oc[1], ip))
                 self.outlets.append(pytuya.OutletDevice(oc[0], ip, oc[1]))
 
-                print 'found and added ' + str(oc[0]) + \
+                print '[FOUND] found and added ' + str(oc[0]) + \
                       ', device #' + str(len(self.outlets)-1)
-        print '\n'
+        print '\nDone searching.\n'
 
 
     def networking__get_full_ip_lookup_table(self):
@@ -117,21 +119,6 @@ class OutletNetworkController:
             return result
 
 
-'''
-outletctl = OutletNetworkController()
-
-print outletctl.get_outlet_status()
-print outletctl.get_outlet_state()
-
-print outletctl.get_outlet_status(0)
-print outletctl.get_outlet_state(0)
-
-outletctl.toggle_outlet()
-outletctl.toggle_outlet(0)
-outletctl.toggle_outlet()
-
-outletctl.test_outlets()
-'''
 
 # CH1: brightness
 # CH2,3,4: R,G,B
@@ -144,37 +131,74 @@ outletctl.test_outlets()
 #      250 sets in sound control mode.
 # CH7: control value for CH6 setting.
 
+class GlobalDmxState(object):
+    def __init__(self):
+        self.lock = threading.Lock()
+        self.state = array.array('B', [0]*512)
+
+    def get(self):
+        with self.lock:
+            local_state = self.state
+        return local_state
+
+    def set(self, array):
+        with self.lock:
+            self.state = array
+
+
+
+class DmxControlThread(threading.Thread):
+    def __init__(self, name, ola_universe, dmx_state, interface_fs=30):
+        threading.Thread.__init__(self)
+        self.daemon = True
+        self.name = name
+        self.ola_universe = ola_universe
+        self.dmx_state = dmx_state
+        self.tick_interval = 1000./interface_fs
+
+    def DmxSent(self, state):
+        if not state.Succeeded():
+            print 'DMX ERROR, NOT SUCCEEDED.'
+            self.wrapper.Stop()
+
+    def send_DMX(self):
+        self.wrapper.AddEvent(self.tick_interval, self.send_DMX)
+        self.wrapper.Client().SendDmx(self.ola_universe,
+                                      self.dmx_state.get(),
+                                      self.DmxSent)
+
+    def close(self):
+        print 'thread close'
+        self.wrapper.Stop()
+
+    def run(self):
+        print 'starting DMX control thread'
+        atexit.register(self.close)
+        self.wrapper = ClientWrapper()
+        self.wrapper.AddEvent(self.tick_interval, self.send_DMX)
+        self.wrapper.Run()
+
+
+
 class UKingController:
-
-    ola_universe = 1
-    num_channels = 1
-    ch_indices = [1]
-    dmx_state = array.array('B', [0]*512)
-
     def __init__(self, num_channels=4, ola_universe=1):
         print 'initializing UKing DMX controller with ' + \
               str(num_channels) + ' channels in universe ' + \
               str(ola_universe) + '.'
 
-        self.ola_universe = ola_universe
         self.num_channels = num_channels
+        self.ch_indices = [1]
         self.ch_indices.extend(np.multiply(8,range(1,num_channels)).tolist())
 
         print 'LIGHTS SHOULD BE SET TO CHANNELS ' + str(self.ch_indices)
 
-        #initialize the DMX wrapper
-        atexit.register(self.close)
-        self.wrapper = ClientWrapper()
+        self.dmx_state = GlobalDmxState()
+        self.local_dmx_state = self.dmx_state.get()
+        self.dmx_controller = DmxControlThread('t1',
+                                                ola_universe,
+                                                self.dmx_state)
 
-    def send_DMX(self):
-
-        def DmxSent(state):
-            if not state.Succeeded():
-                print 'DMX ERROR, NOT SUCCEEDED.  CONSIDER RESTART.'
-                self.wrapper.Stop()
-
-        self.wrapper.Client().SendDmx(self.ola_universe, self.dmx_state, DmxSent)
-        self.wrapper.Run()
+        self.dmx_controller.start()
 
 
     def update_channel(self, channel=None, values=[0,0,0,0,0,0,0]):
@@ -182,28 +206,26 @@ class UKingController:
         if channel is not None:
             to_update = self.ch_indices[channel]-1
             for i,v in enumerate(values):
-                self.dmx_state[to_update + i] = v
+                self.local_dmx_state[to_update + i] = v
         else:
             for i,v in enumerate(values):
                 for ch in self.ch_indices:
                     to_update = ch-1
-                    self.dmx_state[to_update + i] = v
+                    self.local_dmx_state[to_update + i] = v
 
-        self.send_DMX()
-
-
-    def fade_in(self, channel=None, rate=120):
-        for i in range(rate):
-            cur_val = int(i*(255.0/(rate-1)))
-            self.update_channel(channel, values=[cur_val])
-            time.sleep(.03)
+        self.dmx_state.set(self.local_dmx_state)
 
 
-    def fade_out(self, channel=None, rate=120):
-        for i in range(rate):
-            cur_val = 255 - int(i*(255.0/(rate-1)))
-            self.update_channel(channel, values=[cur_val])
-            time.sleep(.03)
+    def fade_in(self, channel=None, rate=1):
+        for i in range(255):
+            self.update_channel(channel, values=[i])
+            time.sleep(rate/30.)
+
+
+    def fade_out(self, channel=None, rate=1):
+        for i in range(255):
+            self.update_channel(channel, values=[255-i])
+            time.sleep(rate/30.)
 
 
     def test_dmx(self):
@@ -223,28 +245,28 @@ class UKingController:
             time.sleep(1)
 
 
-    def close(self):
-        self.wrapper.Stop()
-
-'''
-dmx = UKingController(2)
-dmx.update_channel(values=[255,255,255,255])
-time.sleep(1)
-dmx.update_channel(values=[255,0,0,255])
-time.sleep(1)
-dmx.update_channel(0, values=[255,255,0,0])
-time.sleep(1)
-dmx.update_channel(1, values=[255,255,0,0])
-time.sleep(1)
-temp.close()
-'''
 
 if __name__=='__main__':
-    outletctl = OutletNetworkController()
+    outletctl = OutletNetworkController("192.168.2.*")
     outletctl.test_outlets()
+
+    '''
+    print outletctl.get_outlet_status()
+    print outletctl.get_outlet_state()
+
+    print outletctl.get_outlet_status(0)
+    print outletctl.get_outlet_state(0)
+
+    outletctl.toggle_outlet()
+    outletctl.toggle_outlet(0)
+    outletctl.toggle_outlet()
+
+    outletctl.test_outlets()
+    '''
 
     dmx = UKingController(4)
     dmx.test_dmx()
     dmx.update_channel(values=[0,255,255,255])
     dmx.fade_in()
     dmx.fade_out()
+

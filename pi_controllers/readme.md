@@ -13,7 +13,8 @@ sudo chmod a+rx /usr/local/bin/youtube-dl
 youtube-dl -f 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best' -o '/videos/youtube_scenes/nameyouwant' <youtube-id-val>
 
 #should probably limit it to 480
-youtube-dl -f 'bestvideo[height<=480][ext=mp4]+bestaudio[ext=m4a]/best[height<=480]/best' -o '/videos/youtube_scenes/nameyouwant' <youtube-id-val>
+youtube-dl -f 'bestvideo[height<=480][ext=webm]/best[height<=480]/best' -o '/videos/youtube_scenes/nameyouwant' <youtube-id-val>
+
 
 #chop it down
 ffmpeg -i /videos/youtube_scenes/fog.mp4 -ss 00:00:00 -to 00:00:10 -c copy /videos/youtube_scenes/fog_short.mp4
