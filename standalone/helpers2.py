@@ -135,15 +135,19 @@ class GlobalDmxState(object):
     def __init__(self):
         self.lock = threading.Lock()
         self.state = array.array('B', [0]*512)
+        self.modified = False
 
     def get(self):
         with self.lock:
             local_state = self.state
-        return local_state
+            local_modified = self.modified
+            self.modified = False
+        return local_state, local_modified
 
     def set(self, array):
         with self.lock:
             self.state = array
+            self.modified = True
 
 
 
@@ -163,9 +167,12 @@ class DmxControlThread(threading.Thread):
 
     def send_DMX(self):
         self.wrapper.AddEvent(self.tick_interval, self.send_DMX)
-        self.wrapper.Client().SendDmx(self.ola_universe,
-                                      self.dmx_state.get(),
-                                      self.DmxSent)
+
+        new_state, modified = self.dmx_state.get()
+        if modified:
+            self.wrapper.Client().SendDmx(self.ola_universe,
+                                            new_state,
+                                            self.DmxSent)
 
     def close(self):
         print 'thread close'
@@ -193,7 +200,7 @@ class UKingController:
         print 'LIGHTS SHOULD BE SET TO CHANNELS ' + str(self.ch_indices)
 
         self.dmx_state = GlobalDmxState()
-        self.local_dmx_state = self.dmx_state.get()
+        self.local_dmx_state = self.dmx_state.get()[0]
         self.dmx_controller = DmxControlThread('t1',
                                                 ola_universe,
                                                 self.dmx_state)

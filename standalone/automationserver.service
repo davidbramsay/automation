@@ -1,0 +1,17 @@
+[Unit]
+Description=Start Automation Server
+After=multi-user.target
+Requires=network.target
+
+[Service]
+Type=idle
+User=root
+ExecStart=/usr/bin/python /home/pi/Documents/automation/standalone/server.py
+
+Restart=always
+RestartSec=3600
+
+[Install]
+WantedBy=multi-user.target
+
+
