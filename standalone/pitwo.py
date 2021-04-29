@@ -33,6 +33,8 @@ p.set_fullscreen(True)
 
 start_video = 'black'
 
+PAUSED = False
+
 for i,v in enumerate(videos):
     if start_video in v:
         global playing
@@ -51,7 +53,7 @@ class Videos(Resource):
 		return videos
 
 class Play(Resource):
-	def get(self, video):
+    def get(self, video):
         if not PAUSED:
             for i,v in enumerate(videos):
                 if video in v:
