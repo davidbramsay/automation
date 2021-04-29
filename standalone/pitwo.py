@@ -37,9 +37,6 @@ PAUSED = False
 
 for i,v in enumerate(videos):
     if start_video in v:
-        global playing
-        global p
-
         p.set_media(media[i])
         p.play()
         playing = v
