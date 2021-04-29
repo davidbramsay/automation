@@ -125,95 +125,115 @@ start_video = 'black'
 
 for i,v in enumerate(videos):
     if start_video in v:
-        global playing
-        global p
 
         p.set_media(media[i])
         p.play()
         playing = v
 
+PAUSED = False
+
 class SetLightColorString(Resource):
     def get(self, dmxch, color):
-        lightcontrol.set_light(int(dmxch), color)
+        if not PAUSED:
+            lightcontrol.set_light(int(dmxch), color)
 
 class SetLightColorInt(Resource):
     def get(self, dmxch, r, g, b):
-        lightcontrol.set_light(int(dmxch), (r, g, b))
+        if not PAUSED:
+            lightcontrol.set_light(int(dmxch), (r, g, b))
 
 class SetLightColorStringDim(Resource):
     def get(self, dmxch, color):
-        lightcontrol.set_light(int(dmxch), str(color), dim=True)
+        if not PAUSED:
+            lightcontrol.set_light(int(dmxch), str(color), dim=True)
 
 class SetLightColorIntDim(Resource):
     def get(self, dmxch, r, g, b):
-        lightcontrol.set_light(int(dmxch), (r, g, b), dim=True)
+        if not PAUSED:
+            lightcontrol.set_light(int(dmxch), (r, g, b), dim=True)
 
 class SetLightColorStringDimInt(Resource):
     def get(self, dmxch, color, dim):
-        lightcontrol.set_light(int(dmxch), str(color), dim)
+        if not PAUSED:
+            lightcontrol.set_light(int(dmxch), str(color), dim)
 
 class SetLightColorIntDimInt(Resource):
     def get(self, dmxch, r, g, b):
-        lightcontrol.set_light(int(dmxch), (r, g, b), dim)
+        if not PAUSED:
+            lightcontrol.set_light(int(dmxch), (r, g, b), dim)
 
 
 class FadeLightIn(Resource):
     def get(self, dmxch):
-        lightcontrol.fade_light(int(dmxch), fadein=True)
+        if not PAUSED:
+            lightcontrol.fade_light(int(dmxch), fadein=True)
 
 class FadeLightOut(Resource):
     def get(self, dmxch):
-        lightcontrol.fade_light(int(dmxch), fadein=False)
+        if not PAUSED:
+            lightcontrol.fade_light(int(dmxch), fadein=False)
 
 class FadeLightsIn(Resource):
     def get(self):
-        lightcontrol.fade_all_lights(fadein=True)
+        if not PAUSED:
+            lightcontrol.fade_all_lights(fadein=True)
 
 class FadeLightsOut(Resource):
     def get(self):
-        lightcontrol.fade_all_lights(fadein=False)
+        if not PAUSED:
+            lightcontrol.fade_all_lights(fadein=False)
 
 
 class LightOn(Resource):
     def get(self, dmxch):
-        lightcontrol.light_power(int(dmxch), on=True)
+        if not PAUSED:
+            lightcontrol.light_power(int(dmxch), on=True)
 
 class LightsOn(Resource):
     def get(self):
-        lightcontrol.all_lights_power(on=True)
+        if not PAUSED:
+            lightcontrol.all_lights_power(on=True)
 
 class LightOff(Resource):
     def get(self, dmxch):
-        lightcontrol.light_power(int(dmxch), on=False)
+        if not PAUSED:
+            lightcontrol.light_power(int(dmxch), on=False)
 
 class LightsOff(Resource):
     def get(self):
-        lightcontrol.all_lights_power(on=False)
+        if not PAUSED:
+            lightcontrol.all_lights_power(on=False)
 
 
 class OutletOn(Resource):
     def get(self, outletnum):
-    	lightcontrol.outlet_power(outletnum, on=True)
+        if not PAUSED:
+            lightcontrol.outlet_power(outletnum, on=True)
 
 class OutletOff(Resource):
     def get(self, outletnum):
-    	lightcontrol.outlet_power(outletnum, on=False)
+        if not PAUSED:
+            lightcontrol.outlet_power(outletnum, on=False)
 
 class OutletToggle(Resource):
     def get(self, outletnum):
-    	lightcontrol.outlet_toggle(outletnum)
+        if not PAUSED:
+            lightcontrol.outlet_toggle(outletnum)
 
 class OutletsOn(Resource):
     def get(self):
-    	lightcontrol.all_outlets_power(on=True)
+        if not PAUSED:
+            lightcontrol.all_outlets_power(on=True)
 
 class OutletsOff(Resource):
     def get(self):
-    	lightcontrol.all_outlets_power(on=False)
+        if not PAUSED:
+            lightcontrol.all_outlets_power(on=False)
 
 class OutletsToggle(Resource):
     def get(self):
-    	lightcontrol.all_outlets_toggle()
+        if not PAUSED:
+            lightcontrol.all_outlets_toggle()
 
 class Playing(Resource):
 	def get(self):
@@ -225,18 +245,31 @@ class Videos(Resource):
 
 class Play(Resource):
 	def get(self, video):
-		for i,v in enumerate(videos):
-			if video in v:
-				global playing
-				global p
+        if not PAUSED:
+            for i,v in enumerate(videos):
+                if video in v:
+                    global playing
+                    global p
 
-				p.set_media(media[i])
-				p.play()
+                    p.set_media(media[i])
+                    p.play()
 
-				playing = v
-				return 'switched to ' + v, 200
+                    playing = v
+                    return 'switched to ' + v, 200
 
-		return 'no such video', 400
+            return 'no such video', 400
+        return 'system paused', 400
+
+
+class PauseSystem(Resource):
+    def get(self):
+        global PAUSED
+        PAUSED = True
+
+class ResumeSystem(Resource):
+    def get(self):
+        global PAUSED
+        PAUSED = False
 
 api.add_resource(Playing, '/playing')
 api.add_resource(Videos, '/videos')
@@ -268,11 +301,8 @@ api.add_resource(OutletsOn, '/outlets/on')
 api.add_resource(OutletsOff, '/outlets/off')
 api.add_resource(OutletsToggle, '/outlets/toggle')
 
+api.add_resource(PauseSystem, '/pause')
+api.add_resource(ResumeSystem, '/resume')
+
 if __name__=='__main__':
-
-    #this is to work with monit
-    pid = str(os.getpid())
-    with open('/tmp/automationserver.pid','w') as file:
-        file.write(pid)
-
     app.run(debug=True, host='0.0.0.0', port=5000, use_reloader=False)
