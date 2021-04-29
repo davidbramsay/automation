@@ -244,7 +244,7 @@ class Videos(Resource):
 		return videos
 
 class Play(Resource):
-	def get(self, video):
+    def get(self, video):
         if not PAUSED:
             for i,v in enumerate(videos):
                 if video in v:
