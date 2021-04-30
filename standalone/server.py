@@ -134,106 +134,86 @@ PAUSED = False
 
 class SetLightColorString(Resource):
     def get(self, dmxch, color):
-        if not PAUSED:
-            lightcontrol.set_light(int(dmxch), color)
+        lightcontrol.set_light(int(dmxch), color)
 
 class SetLightColorInt(Resource):
     def get(self, dmxch, r, g, b):
-        if not PAUSED:
-            lightcontrol.set_light(int(dmxch), (r, g, b))
+        lightcontrol.set_light(int(dmxch), (r, g, b))
 
 class SetLightColorStringDim(Resource):
     def get(self, dmxch, color):
-        if not PAUSED:
-            lightcontrol.set_light(int(dmxch), str(color), dim=True)
+        lightcontrol.set_light(int(dmxch), str(color), dim=True)
 
 class SetLightColorIntDim(Resource):
     def get(self, dmxch, r, g, b):
-        if not PAUSED:
-            lightcontrol.set_light(int(dmxch), (r, g, b), dim=True)
+        lightcontrol.set_light(int(dmxch), (r, g, b), dim=True)
 
 class SetLightColorStringDimInt(Resource):
     def get(self, dmxch, color, dim):
-        if not PAUSED:
-            lightcontrol.set_light(int(dmxch), str(color), dim)
+        lightcontrol.set_light(int(dmxch), str(color), dim)
 
 class SetLightColorIntDimInt(Resource):
     def get(self, dmxch, r, g, b):
-        if not PAUSED:
-            lightcontrol.set_light(int(dmxch), (r, g, b), dim)
+        lightcontrol.set_light(int(dmxch), (r, g, b), dim)
 
 
 class FadeLightIn(Resource):
     def get(self, dmxch):
-        if not PAUSED:
-            lightcontrol.fade_light(int(dmxch), fadein=True)
+        lightcontrol.fade_light(int(dmxch), fadein=True)
 
 class FadeLightOut(Resource):
     def get(self, dmxch):
-        if not PAUSED:
-            lightcontrol.fade_light(int(dmxch), fadein=False)
+        lightcontrol.fade_light(int(dmxch), fadein=False)
 
 class FadeLightsIn(Resource):
     def get(self):
-        if not PAUSED:
-            lightcontrol.fade_all_lights(fadein=True)
+        lightcontrol.fade_all_lights(fadein=True)
 
 class FadeLightsOut(Resource):
     def get(self):
-        if not PAUSED:
-            lightcontrol.fade_all_lights(fadein=False)
+        lightcontrol.fade_all_lights(fadein=False)
 
 
 class LightOn(Resource):
     def get(self, dmxch):
-        if not PAUSED:
-            lightcontrol.light_power(int(dmxch), on=True)
+        lightcontrol.light_power(int(dmxch), on=True)
 
 class LightsOn(Resource):
     def get(self):
-        if not PAUSED:
-            lightcontrol.all_lights_power(on=True)
+        lightcontrol.all_lights_power(on=True)
 
 class LightOff(Resource):
     def get(self, dmxch):
-        if not PAUSED:
-            lightcontrol.light_power(int(dmxch), on=False)
+        lightcontrol.light_power(int(dmxch), on=False)
 
 class LightsOff(Resource):
     def get(self):
-        if not PAUSED:
-            lightcontrol.all_lights_power(on=False)
+        lightcontrol.all_lights_power(on=False)
 
 
 class OutletOn(Resource):
     def get(self, outletnum):
-        if not PAUSED:
-            lightcontrol.outlet_power(outletnum, on=True)
+        lightcontrol.outlet_power(outletnum, on=True)
 
 class OutletOff(Resource):
     def get(self, outletnum):
-        if not PAUSED:
-            lightcontrol.outlet_power(outletnum, on=False)
+        lightcontrol.outlet_power(outletnum, on=False)
 
 class OutletToggle(Resource):
     def get(self, outletnum):
-        if not PAUSED:
-            lightcontrol.outlet_toggle(outletnum)
+        lightcontrol.outlet_toggle(outletnum)
 
 class OutletsOn(Resource):
     def get(self):
-        if not PAUSED:
-            lightcontrol.all_outlets_power(on=True)
+        lightcontrol.all_outlets_power(on=True)
 
 class OutletsOff(Resource):
     def get(self):
-        if not PAUSED:
-            lightcontrol.all_outlets_power(on=False)
+        lightcontrol.all_outlets_power(on=False)
 
 class OutletsToggle(Resource):
     def get(self):
-        if not PAUSED:
-            lightcontrol.all_outlets_toggle()
+        lightcontrol.all_outlets_toggle()
 
 class Playing(Resource):
 	def get(self):
@@ -245,20 +225,18 @@ class Videos(Resource):
 
 class Play(Resource):
     def get(self, video):
-        if not PAUSED:
-            for i,v in enumerate(videos):
-                if video in v:
-                    global playing
-                    global p
+        for i,v in enumerate(videos):
+            if video in v:
+                global playing
+                global p
 
-                    p.set_media(media[i])
-                    p.play()
+                p.set_media(media[i])
+                p.play()
 
-                    playing = v
-                    return 'switched to ' + v, 200
+                playing = v
+                return 'switched to ' + v, 200
 
-            return 'no such video', 400
-        return 'system paused', 400
+        return 'no such video', 400
 
 
 class PauseSystem(Resource):
@@ -270,6 +248,11 @@ class ResumeSystem(Resource):
     def get(self):
         global PAUSED
         PAUSED = False
+
+class SystemState(Resource):
+    def get(self):
+        return PAUSED, 200
+
 
 api.add_resource(Playing, '/playing')
 api.add_resource(Videos, '/videos')
@@ -303,6 +286,7 @@ api.add_resource(OutletsToggle, '/outlets/toggle')
 
 api.add_resource(PauseSystem, '/pause')
 api.add_resource(ResumeSystem, '/resume')
+api.add_resource(SystemState, '/paused')
 
 if __name__=='__main__':
     app.run(debug=True, host='0.0.0.0', port=5000, use_reloader=False)
