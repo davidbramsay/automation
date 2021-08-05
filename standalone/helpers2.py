@@ -7,6 +7,63 @@ import time
 import atexit
 import array
 import threading
+from requests.exceptions import ConnectionError
+
+
+def threaded_outlet_call(outlets, outlet, state):
+    print('calling outlet thread')
+    #outlet=None means we set state for all outlets
+    if outlet is not None:
+        successful = False
+        counter = 0
+        while not successful and counter<10:
+            print('TRY',counter)
+            try:
+                outlets[outlet].set_status(state)
+                print('light success')
+                successful = True
+            except:
+                time.sleep(0.5+counter*0.5)
+                counter+=1
+                print('connection reset: trying with counter')
+
+    else:
+        retries=range(len(outlets))
+        counter = 0
+        while len(retries) and counter<10:
+            print('TRY',counter)
+            new_retries = []
+            for i in retries:
+                try:
+                    outlets[i].set_status(state)
+                    print('success for',i)
+                except:
+                    new_retries.append(i)
+                    print('connection reset for',i)
+
+            retries = new_retries
+            time.sleep(0.5+counter*0.5)
+            counter+=1
+
+            if not len(retries):
+                #seemed successful, double check
+                result = []
+                for o in outlets:
+                    successful = False
+                    while not successful:
+                        try:
+                            result.append(o.status()['dps']['1'])
+                            successful = True
+                        except:
+                            pass
+                print(result)
+
+                for i in range(len(result)):
+                    if result[i] != state:
+                        retries.append(i)
+                print('new retries:',retries)
+
+
 
 class OutletNetworkController:
 
@@ -100,12 +157,9 @@ class OutletNetworkController:
 
     def set_outlet_state(self, outlet=None, state=True):
         #outlet=None means we set state for all outlets
-        if outlet is not None:
-            self.outlets[outlet].set_status(state)
-        else:
-            for i in range(len(self.outlets)):
-                self.outlets[i].set_status(state)
-
+        outlet_thread = threading.Thread(target=threaded_outlet_call, args=(self.outlets, outlet, state))
+        outlet_thread.daemon = True
+        outlet_thread.start()
 
     def get_outlet_status(self, outlet=None):
         #outlet=None means we get state for all outlets

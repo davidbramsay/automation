@@ -125,12 +125,12 @@ start_video = 'black'
 
 for i,v in enumerate(videos):
     if start_video in v:
-        global playing
-        global p
 
         p.set_media(media[i])
         p.play()
         playing = v
+
+PAUSED = False
 
 class SetLightColorString(Resource):
     def get(self, dmxch, color):
@@ -193,27 +193,27 @@ class LightsOff(Resource):
 
 class OutletOn(Resource):
     def get(self, outletnum):
-    	lightcontrol.outlet_power(outletnum, on=True)
+        lightcontrol.outlet_power(outletnum, on=True)
 
 class OutletOff(Resource):
     def get(self, outletnum):
-    	lightcontrol.outlet_power(outletnum, on=False)
+        lightcontrol.outlet_power(outletnum, on=False)
 
 class OutletToggle(Resource):
     def get(self, outletnum):
-    	lightcontrol.outlet_toggle(outletnum)
+        lightcontrol.outlet_toggle(outletnum)
 
 class OutletsOn(Resource):
     def get(self):
-    	lightcontrol.all_outlets_power(on=True)
+        lightcontrol.all_outlets_power(on=True)
 
 class OutletsOff(Resource):
     def get(self):
-    	lightcontrol.all_outlets_power(on=False)
+        lightcontrol.all_outlets_power(on=False)
 
 class OutletsToggle(Resource):
     def get(self):
-    	lightcontrol.all_outlets_toggle()
+        lightcontrol.all_outlets_toggle()
 
 class Playing(Resource):
 	def get(self):
@@ -224,19 +224,35 @@ class Videos(Resource):
 		return videos
 
 class Play(Resource):
-	def get(self, video):
-		for i,v in enumerate(videos):
-			if video in v:
-				global playing
-				global p
+    def get(self, video):
+        for i,v in enumerate(videos):
+            if video in v:
+                global playing
+                global p
 
-				p.set_media(media[i])
-				p.play()
+                p.set_media(media[i])
+                p.play()
 
-				playing = v
-				return 'switched to ' + v, 200
+                playing = v
+                return 'switched to ' + v, 200
 
-		return 'no such video', 400
+        return 'no such video', 400
+
+
+class PauseSystem(Resource):
+    def get(self):
+        global PAUSED
+        PAUSED = True
+
+class ResumeSystem(Resource):
+    def get(self):
+        global PAUSED
+        PAUSED = False
+
+class SystemState(Resource):
+    def get(self):
+        return PAUSED, 200
+
 
 api.add_resource(Playing, '/playing')
 api.add_resource(Videos, '/videos')
@@ -268,11 +284,9 @@ api.add_resource(OutletsOn, '/outlets/on')
 api.add_resource(OutletsOff, '/outlets/off')
 api.add_resource(OutletsToggle, '/outlets/toggle')
 
+api.add_resource(PauseSystem, '/pause')
+api.add_resource(ResumeSystem, '/resume')
+api.add_resource(SystemState, '/paused')
+
 if __name__=='__main__':
-
-    #this is to work with monit
-    pid = str(os.getpid())
-    with open('/tmp/automationserver.pid','w') as file:
-        file.write(pid)
-
     app.run(debug=True, host='0.0.0.0', port=5000, use_reloader=False)
