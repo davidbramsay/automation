@@ -1,0 +1,21 @@
+import time
+import requests
+
+requests.get('http://pihub.local:5000/play/fireplace')
+#requests.get('http://pitwo.local:5000/play/black')
+requests.get('http://pihub.local:5000/outlets/on')
+time.sleep(1)
+requests.get('http://mini.local:5000/background/crickets')
+time.sleep(.1)
+requests.get('http://mini.local:5000/reverb/off')
+time.sleep(.1)
+#requests.get('http://mini.local:5000/spotify/ambient')
+requests.get('http://pihub.local:5000/setlight/0/color/white/dim/215')
+requests.get('http://pihub.local:5000/setlight/1/color/white/dim/215')
+requests.get('http://pihub.local:5000/setlight/2/color/white/dim/215')
+requests.get('http://pihub.local:5000/setlight/3/color/white/dim/215')
+requests.get('http://pihub.local:5000/setlight/4/color/white/dim/215')
+requests.get('http://pihub.local:5000/setlight/5/color/white/dim/215')
+requests.get('http://pihub.local:5000/setlight/6/color/white/dim/215')
+requests.get('http://pihub.local:5000/setlight/7/color/white/dim/215')
+requests.get('http://pihub.local:5000/outlets/on')
